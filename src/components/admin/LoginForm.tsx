@@ -4,18 +4,25 @@ import { useActionState } from "react";
 import { login } from "@/app/admin/actions";
 import { inputClass } from "./ActionForm";
 
-export function LoginForm({ next }: { next: string }) {
+export function LoginForm({ next, demo }: { next: string; demo?: { email: string; password: string } }) {
   const [state, action, pending] = useActionState(login, {});
   return (
     <form action={action} className="mt-6 grid gap-4">
       <input type="hidden" name="next" value={next} />
       <label className="text-sm font-medium">
         Email
-        <input name="email" type="email" required autoComplete="username" className={inputClass} />
+        <input name="email" type="email" required autoComplete="username" defaultValue={demo?.email} className={inputClass} />
       </label>
       <label className="text-sm font-medium">
         Password
-        <input name="password" type="password" required autoComplete="current-password" className={inputClass} />
+        <input
+          name="password"
+          type="password"
+          required
+          autoComplete="current-password"
+          defaultValue={demo?.password}
+          className={inputClass}
+        />
       </label>
       {state.message && (
         <p role="alert" className="text-sm text-red-600">

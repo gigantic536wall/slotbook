@@ -11,7 +11,8 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "postinstall": "prisma generate",
-    "gdpr:cleanup": "tsx scripts/gdpr-cleanup.ts"
+    "gdpr:cleanup": "tsx scripts/gdpr-cleanup.ts",
+    "vercel-build": "prisma migrate deploy && tsx scripts/ensure-demo.ts && next build"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",

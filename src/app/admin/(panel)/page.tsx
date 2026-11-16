@@ -57,7 +57,7 @@ async function Schedule({ searchParams }: Pick<PageProps<"/admin">, "searchParam
           <h1 className="text-2xl font-semibold tracking-tight">{formatDate(dayStart, tz)}</h1>
           {date === today && <p className="text-sm text-amber-700">Today</p>}
         </div>
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex flex-wrap items-center gap-2 text-sm">
           <Link href={`/admin?date=${addDays(date, -1)}`} className="rounded-lg border border-stone-300 px-3 py-1.5 hover:bg-white">
             ← Prev
           </Link>
