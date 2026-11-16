@@ -6,6 +6,7 @@ import { getAvailability } from "@/lib/availability";
 import { getCatalog } from "@/lib/catalog";
 import { dayKey } from "@/lib/dates";
 import { db } from "@/lib/db";
+import { anonymizeBooking } from "@/lib/gdpr";
 
 const BookingInput = z.object({
   serviceId: z.number().int().positive(),
@@ -93,6 +94,15 @@ export async function createBooking(raw: BookingInput): Promise<BookingResult> {
     }
   }
   return { ok: false, error: "slot_taken" };
+}
+
+/** GDPR: the customer erases their personal data using the secret manage link. */
+export async function deleteMyData(token: string): Promise<{ ok: boolean }> {
+  if (typeof token !== "string" || token.length < 20 || token.length > 64) return { ok: false };
+  const booking = await db.booking.findUnique({ where: { manageToken: token }, select: { id: true } });
+  if (!booking) return { ok: false };
+  await anonymizeBooking(booking.id);
+  return { ok: true };
 }
 
 export type CancelResult = { ok: true } | { ok: false; error: "not_found" | "too_late" };

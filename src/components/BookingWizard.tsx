@@ -4,30 +4,28 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { createBooking } from "@/app/actions";
+import type { Dictionary, Locale } from "@/i18n";
 import type { Catalog } from "@/lib/catalog";
 import { formatPrice, formatTime } from "@/lib/dates";
 
 type Slot = { start: string; staffIds: number[] };
 type Step = "service" | "staff" | "time" | "details";
+const STEP_IDS: Step[] = ["service", "staff", "time", "details"];
 
-const STEPS: { id: Step; label: string }[] = [
-  { id: "service", label: "Service" },
-  { id: "staff", label: "Barber" },
-  { id: "time", label: "Date & time" },
-  { id: "details", label: "Your details" },
-];
-
-const ERRORS: Record<string, string> = {
-  slot_taken: "Sorry, someone just booked this time. Please pick another one.",
-  unavailable: "This time is no longer available. Please pick another one.",
-  invalid: "Please check the highlighted fields.",
-  network: "Something went wrong. Please try again.",
+type Props = {
+  catalog: Catalog;
+  days: string[];
+  lang: Locale;
+  t: Dictionary["booking"];
 };
 
-export function BookingWizard({ catalog, days }: { catalog: Catalog; days: string[] }) {
+export function BookingWizard({ catalog, days, lang, t }: Props) {
   const { business, services, staff } = catalog;
   const router = useRouter();
   const searchParams = useSearchParams();
+  const de = lang === "de";
+  const dateLocale = de ? "de-DE" : "en-GB";
+  const serviceName = (s: (typeof services)[number]) => (de ? s.nameDe : s.nameEn);
 
   const preselected = Number(searchParams.get("service"));
   const [serviceId, setServiceId] = useState<number | null>(
@@ -73,7 +71,7 @@ export function BookingWizard({ catalog, days }: { catalog: Catalog; days: strin
     return () => controller.abort();
   }, [step, serviceId, staffId, activeDate, requestKey]);
 
-  const stepIndex = STEPS.findIndex((s) => s.id === step);
+  const stepIndex = STEP_IDS.indexOf(step);
   const tz = business.timeZone;
 
   function submit(form: FormData) {
@@ -82,7 +80,7 @@ export function BookingWizard({ catalog, days }: { catalog: Catalog; days: strin
     setBadFields([]);
     startTransition(async () => {
       try {
-        const result = await createBooking({
+        const res = await createBooking({
           serviceId: service.id,
           staffId: staffId ?? null,
           start: slot.start,
@@ -91,22 +89,22 @@ export function BookingWizard({ catalog, days }: { catalog: Catalog; days: strin
           phone: String(form.get("phone") ?? ""),
           note: String(form.get("note") ?? ""),
           consent: form.get("consent") === "on",
-          locale: "en",
+          locale: lang,
           website: String(form.get("website") ?? ""),
         });
-        if (result.ok) {
-          router.push(`/booking/${result.token}?new=1`);
+        if (res.ok) {
+          router.push(`/${lang}/booking/${res.token}?new=1`);
           return;
         }
-        setError(ERRORS[result.error]);
-        if (result.error === "invalid") setBadFields(result.fields ?? []);
+        setError(t.errors[res.error]);
+        if (res.error === "invalid") setBadFields(res.fields ?? []);
         else {
           setSlot(null);
           setReload((n) => n + 1);
           setStep("time");
         }
       } catch {
-        setError(ERRORS.network);
+        setError(t.errors.network);
       }
     });
   }
@@ -115,36 +113,39 @@ export function BookingWizard({ catalog, days }: { catalog: Catalog; days: strin
     `mt-1 w-full rounded-lg border bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-amber-400 ${
       badFields.includes(name) ? "border-red-500" : "border-stone-300"
     }`;
+  const cardClass = "w-full rounded-2xl border border-stone-200 bg-white p-5 text-left transition hover:border-amber-400";
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="text-3xl font-semibold tracking-tight">Book an appointment</h1>
+      <h1 className="text-3xl font-semibold tracking-tight">{t.title}</h1>
 
-      <ol className="mt-6 flex gap-2 text-sm" aria-label="Progress">
-        {STEPS.map((s, i) => (
+      <ol className="mt-6 flex gap-2 text-sm">
+        {STEP_IDS.map((id, i) => (
           <li
-            key={s.id}
+            key={id}
             aria-current={i === stepIndex ? "step" : undefined}
             className={`flex-1 border-t-4 pt-2 ${i <= stepIndex ? "border-amber-400 text-stone-900" : "border-stone-200 text-stone-400"}`}
           >
             <span className="hidden sm:inline">{i + 1}. </span>
-            {s.label}
+            {t.steps[id]}
           </li>
         ))}
       </ol>
 
-      {(service || chosenStaff || slot) && step !== "service" && (
+      {service && step !== "service" && (
         <div className="mt-6 flex flex-wrap gap-x-6 gap-y-1 rounded-xl bg-stone-100 px-4 py-3 text-sm">
-          {service && (
+          <span>
+            <b>{serviceName(service)}</b> · {service.durationMin} min · {formatPrice(service.priceCents, lang)}
+          </span>
+          {step !== "staff" && staffId !== undefined && (
             <span>
-              <b>{service.nameEn}</b> · {service.durationMin} min · {formatPrice(service.priceCents)}
+              {t.with} {chosenStaff ? chosenStaff.name : t.anyBarber}
             </span>
           )}
-          {step !== "staff" && staffId !== undefined && <span>with {chosenStaff ? chosenStaff.name : "any barber"}</span>}
           {step === "details" && slot && (
             <span>
-              {new Date(slot.start).toLocaleDateString("en-GB", { timeZone: tz, weekday: "short", day: "numeric", month: "short" })},{" "}
-              {formatTime(slot.start, tz)}
+              {new Date(slot.start).toLocaleDateString(dateLocale, { timeZone: tz, weekday: "short", day: "numeric", month: "short" })},{" "}
+              {formatTime(slot.start, tz, lang)}
             </span>
           )}
         </div>
@@ -167,15 +168,15 @@ export function BookingWizard({ catalog, days }: { catalog: Catalog; days: strin
                   setSlot(null);
                   setStep("staff");
                 }}
-                className="flex w-full items-center justify-between rounded-2xl border border-stone-200 bg-white p-5 text-left transition hover:border-amber-400"
+                className={`${cardClass} flex items-center justify-between`}
               >
                 <span>
-                  <span className="block font-semibold">{s.nameEn}</span>
+                  <span className="block font-semibold">{serviceName(s)}</span>
                   <span className="text-sm text-stone-500">
-                    {s.descEn} · {s.durationMin} min
+                    {de ? s.descDe : s.descEn} · {s.durationMin} min
                   </span>
                 </span>
-                <span className="font-semibold">{formatPrice(s.priceCents)}</span>
+                <span className="font-semibold">{formatPrice(s.priceCents, lang)}</span>
               </button>
             </li>
           ))}
@@ -191,10 +192,10 @@ export function BookingWizard({ catalog, days }: { catalog: Catalog; days: strin
                   setStaffId(null);
                   setStep("time");
                 }}
-                className="h-full w-full rounded-2xl border border-stone-200 bg-white p-5 text-left transition hover:border-amber-400"
+                className={`${cardClass} h-full`}
               >
-                <span className="block font-semibold">Any barber</span>
-                <span className="text-sm text-stone-500">Most available times</span>
+                <span className="block font-semibold">{t.anyBarber}</span>
+                <span className="text-sm text-stone-500">{t.anyBarberHint}</span>
               </button>
             </li>
             {eligibleStaff.map((p) => (
@@ -204,21 +205,21 @@ export function BookingWizard({ catalog, days }: { catalog: Catalog; days: strin
                     setStaffId(p.id);
                     setStep("time");
                   }}
-                  className="h-full w-full rounded-2xl border border-stone-200 bg-white p-5 text-left transition hover:border-amber-400"
+                  className={`${cardClass} h-full`}
                 >
                   <span className="block font-semibold">{p.name}</span>
-                  <span className="text-sm text-stone-500">{p.titleEn}</span>
+                  <span className="text-sm text-stone-500">{de ? p.titleDe : p.titleEn}</span>
                 </button>
               </li>
             ))}
           </ul>
-          <BackButton onClick={() => setStep("service")} />
+          <BackButton label={t.back} onClick={() => setStep("service")} />
         </>
       )}
 
       {step === "time" && (
         <>
-          <div className="mt-6 flex gap-2 overflow-x-auto pb-2" role="listbox" aria-label="Day">
+          <div className="mt-6 flex gap-2 overflow-x-auto pb-2" role="listbox" aria-label={t.steps.time}>
             {days.map((d) => {
               const label = new Date(`${d}T12:00:00Z`);
               const selected = d === activeDate;
@@ -235,20 +236,18 @@ export function BookingWizard({ catalog, days }: { catalog: Catalog; days: strin
                     selected ? "border-stone-900 bg-stone-900 text-white" : "border-stone-200 bg-white hover:border-amber-400"
                   }`}
                 >
-                  <span className="block text-xs uppercase">{label.toLocaleDateString("en-GB", { weekday: "short", timeZone: "UTC" })}</span>
+                  <span className="block text-xs uppercase">{label.toLocaleDateString(dateLocale, { weekday: "short", timeZone: "UTC" })}</span>
                   <span className="block text-lg font-semibold">{label.getUTCDate()}</span>
-                  <span className="block text-xs">{label.toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" })}</span>
+                  <span className="block text-xs">{label.toLocaleDateString(dateLocale, { month: "short", timeZone: "UTC" })}</span>
                 </button>
               );
             })}
           </div>
 
           <div className="mt-6 min-h-32">
-            {slotsError && <p className="text-sm text-red-600">Could not load available times. Please try again.</p>}
-            {!slotsError && slots === null && <p className="text-sm text-stone-500">Loading available times…</p>}
-            {slots && slots.length === 0 && (
-              <p className="text-sm text-stone-500">No free times on this day. Please choose another day.</p>
-            )}
+            {slotsError && <p className="text-sm text-red-600">{t.loadFailed}</p>}
+            {!slotsError && slots === null && <p className="text-sm text-stone-500">{t.loadingTimes}</p>}
+            {slots && slots.length === 0 && <p className="text-sm text-stone-500">{t.noTimes}</p>}
             {slots && slots.length > 0 && (
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
                 {slots.map((s) => (
@@ -261,14 +260,14 @@ export function BookingWizard({ catalog, days }: { catalog: Catalog; days: strin
                     }}
                     className="rounded-lg border border-stone-200 bg-white py-2 text-sm font-medium transition hover:border-amber-400 hover:bg-amber-50"
                   >
-                    {formatTime(s.start, tz)}
+                    {formatTime(s.start, tz, lang)}
                   </button>
                 ))}
               </div>
             )}
           </div>
-          <p className="mt-4 text-xs text-stone-500">Times are shown in Berlin time ({tz}).</p>
-          <BackButton onClick={() => setStep("staff")} />
+          <p className="mt-4 text-xs text-stone-500">{t.timezoneNote}</p>
+          <BackButton label={t.back} onClick={() => setStep("staff")} />
         </>
       )}
 
@@ -285,19 +284,19 @@ export function BookingWizard({ catalog, days }: { catalog: Catalog; days: strin
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="text-sm font-medium">
-              Name *
+              {t.name} *
               <input name="name" required autoComplete="name" className={fieldClass("name")} />
             </label>
             <label className="text-sm font-medium">
-              Email *
+              {t.email} *
               <input name="email" type="email" required autoComplete="email" className={fieldClass("email")} />
             </label>
             <label className="text-sm font-medium">
-              Phone <span className="font-normal text-stone-500">(optional)</span>
+              {t.phone} <span className="font-normal text-stone-500">{t.optional}</span>
               <input name="phone" type="tel" autoComplete="tel" className={fieldClass("phone")} />
             </label>
             <label className="text-sm font-medium">
-              Note <span className="font-normal text-stone-500">(optional)</span>
+              {t.note} <span className="font-normal text-stone-500">{t.optional}</span>
               <input name="note" maxLength={500} className={fieldClass("note")} />
             </label>
           </div>
@@ -306,9 +305,9 @@ export function BookingWizard({ catalog, days }: { catalog: Catalog; days: strin
           <label className={`flex items-start gap-3 text-sm ${badFields.includes("consent") ? "text-red-600" : ""}`}>
             <input name="consent" type="checkbox" className="mt-1 h-4 w-4 accent-amber-500" />
             <span>
-              I agree that my data is used to manage this appointment, as described in the{" "}
-              <Link href="/privacy" target="_blank" className="underline">
-                privacy policy
+              {t.consentBefore}{" "}
+              <Link href={`/${lang}/privacy`} target="_blank" className="underline">
+                {t.consentLink}
               </Link>
               . *
             </span>
@@ -319,10 +318,10 @@ export function BookingWizard({ catalog, days }: { catalog: Catalog; days: strin
               disabled={pending}
               className="rounded-full bg-stone-900 px-6 py-3 font-semibold text-white transition hover:bg-stone-700 disabled:opacity-50"
             >
-              {pending ? "Booking…" : "Confirm booking"}
+              {pending ? t.submitting : t.submit}
             </button>
             <button type="button" onClick={() => setStep("time")} className="text-sm text-stone-500 hover:text-stone-900">
-              ← Change time
+              {t.changeTime}
             </button>
           </div>
         </form>
@@ -331,10 +330,10 @@ export function BookingWizard({ catalog, days }: { catalog: Catalog; days: strin
   );
 }
 
-function BackButton({ onClick }: { onClick: () => void }) {
+function BackButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button onClick={onClick} className="mt-6 text-sm text-stone-500 hover:text-stone-900">
-      ← Back
+      {label}
     </button>
   );
 }

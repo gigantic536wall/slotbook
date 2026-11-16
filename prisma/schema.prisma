@@ -123,6 +123,8 @@ model Booking {
   consentAt     DateTime      @db.Timestamptz(3)
   createdAt     DateTime      @default(now()) @db.Timestamptz(3)
   cancelledAt   DateTime?     @db.Timestamptz(3)
+  /// When personal data was erased (customer request or retention period). Times and prices stay for statistics.
+  anonymizedAt  DateTime?     @db.Timestamptz(3)
   staff         Staff         @relation(fields: [staffId], references: [id])
   service       Service       @relation(fields: [serviceId], references: [id])
 

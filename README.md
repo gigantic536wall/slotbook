@@ -26,8 +26,8 @@ Next.js · TypeScript · PostgreSQL · Prisma · Tailwind CSS · Vitest
 - [x] Manage / cancel link for customers (no account needed)
 - [x] Admin panel: day schedule per staff member with stats, services, staff with weekly hours and time off
 - [x] Secure admin sign-in: scrypt password hashes, signed httpOnly session cookie, rate limiting, route protection in `proxy.ts` plus a check in every Server Action
-- [ ] English / German
-- [ ] Cookie banner and data deletion (GDPR)
+- [x] English / German: `/en` and `/de` URLs, language picked from the browser, typed dictionaries (a missing translation fails the build)
+- [x] GDPR: customers delete their own data from the booking page, automatic anonymization after 12 months (`npm run gdpr:cleanup`), privacy policy and Impressum in both languages, no tracking, so no cookie banner is needed
 - [ ] Email confirmations
 - [ ] Live demo
 
