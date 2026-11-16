@@ -2,6 +2,7 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
+import { hashPassword } from "../src/lib/password";
 
 const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 
@@ -80,6 +81,20 @@ async function main() {
         workingHours: { create: s.hours },
       },
     });
+  }
+
+  const email = process.env.ADMIN_EMAIL?.toLowerCase();
+  const password = process.env.ADMIN_PASSWORD;
+  if (email && password) {
+    const passwordHash = await hashPassword(password);
+    await db.adminUser.upsert({
+      where: { email },
+      update: { passwordHash },
+      create: { email, name: "Shop owner", passwordHash },
+    });
+    console.log(`Admin account: ${email}`);
+  } else {
+    console.warn("ADMIN_EMAIL / ADMIN_PASSWORD not set: no admin account created.");
   }
 
   console.log(`Seeded ${services.length} services and ${staff.length} staff members.`);

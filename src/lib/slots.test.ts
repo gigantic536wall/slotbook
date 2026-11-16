@@ -29,6 +29,10 @@ describe("zonedInstant", () => {
     expect(zonedInstant("2026-07-01", 9 * 60, TZ)?.toISOString()).toBe("2026-07-01T07:00:00.000Z");
   });
 
+  it("treats 24:00 as midnight of the next day", () => {
+    expect(zonedInstant("2026-12-01", 24 * 60, TZ)?.toISOString()).toBe("2026-12-01T23:00:00.000Z");
+  });
+
   it("returns null for a time skipped by DST", () => {
     // 29 March 2026: clocks jump from 02:00 to 03:00 in Berlin.
     expect(zonedInstant("2026-03-29", 2 * 60 + 30, TZ)).toBeNull();
@@ -62,6 +66,11 @@ describe("computeSlots", () => {
     const now = at("2026-12-01T08:10:00Z"); // 09:10 Berlin
     expect(times(computeSlots({ ...base, now }))).toEqual(["09:30", "10:00", "10:30", "11:00"]);
     expect(times(computeSlots({ ...base, now, minLeadMin: 60 }))).toEqual(["10:30", "11:00"]);
+  });
+
+  it("offers evening slots when work ends at 24:00", () => {
+    const slots = computeSlots({ ...base, intervals: [{ startMin: 22 * 60, endMin: 24 * 60 }] });
+    expect(times(slots)).toEqual(["22:00", "22:30", "23:00"]);
   });
 
   it("returns nothing on a day off", () => {

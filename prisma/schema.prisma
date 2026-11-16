@@ -10,6 +10,17 @@ datasource db {
   provider = "postgresql"
 }
 
+/// People who can sign in to the admin panel.
+model AdminUser {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  name         String
+  /// scrypt hash: "scrypt$<salt>$<hash>"
+  passwordHash String
+  createdAt    DateTime  @default(now()) @db.Timestamptz(3)
+  lastLoginAt  DateTime? @db.Timestamptz(3)
+}
+
 /// Business-wide settings (one row).
 model Business {
   id          Int     @id @default(1)
@@ -99,6 +110,8 @@ model Booking {
   startsAt      DateTime      @db.Timestamptz(3)
   endsAt        DateTime      @db.Timestamptz(3)
   status        BookingStatus @default(CONFIRMED)
+  /// Price at the moment of booking, so later price changes don't rewrite history.
+  priceCents    Int
   customerName  String
   customerEmail String
   customerPhone String?

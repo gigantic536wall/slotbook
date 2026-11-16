@@ -63,7 +63,7 @@ async function BookingDetails({ params, searchParams }: PageProps<"/booking/[tok
           )}
         </Row>
         <Row label="Service">
-          {booking.service.nameEn} · {booking.service.durationMin} min · {formatPrice(booking.service.priceCents)}
+          {booking.service.nameEn} · {booking.service.durationMin} min · {formatPrice(booking.priceCents)}
         </Row>
         <Row label="Barber">{booking.staff.name}</Row>
         <Row label="Date">{formatDate(booking.startsAt, tz)}</Row>

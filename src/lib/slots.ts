@@ -1,4 +1,5 @@
 import { TZDate } from "@date-fns/tz";
+import { addDays } from "./dates";
 
 /** A working interval in minutes from local midnight, e.g. 09:00–13:00 = { startMin: 540, endMin: 780 }. */
 export type DayInterval = { startMin: number; endMin: number };
@@ -40,6 +41,8 @@ export function weekdayOf(date: string): number {
  * wall-clock time does not exist on that day (spring-forward DST gap).
  */
 export function zonedInstant(date: string, minutes: number, timeZone: string): Date | null {
+  // 24:00 (and later) belongs to the next calendar day.
+  if (minutes >= 24 * 60) return zonedInstant(addDays(date, Math.floor(minutes / 1440)), minutes % 1440, timeZone);
   const { y, m, d } = parseDay(date);
   const h = Math.floor(minutes / 60);
   const min = minutes % 60;

@@ -76,6 +76,7 @@ export async function createBooking(raw: BookingInput): Promise<BookingResult> {
           serviceId: service.id,
           startsAt: start,
           endsAt: end,
+          priceCents: service.priceCents,
           customerName: input.name,
           customerEmail: input.email.toLowerCase(),
           customerPhone: input.phone,

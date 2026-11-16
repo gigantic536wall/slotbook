@@ -8,6 +8,7 @@ Online appointment booking for barbershops, salons, studios and clinics. Custome
 
 - **No double bookings, guaranteed by the database.** A PostgreSQL exclusion constraint (`EXCLUDE USING gist` on staff + time range) rejects overlapping bookings even when two customers book the same slot at the same moment.
 - **Correct time zones.** Opening hours are stored in the business time zone; slot calculation handles daylight saving time changes and is covered by unit tests.
+- **Prices are stored per booking**, so changing a price never rewrites past revenue.
 - **Flexible schedules.** Several working intervals per day (lunch breaks), days off, vacations, different services per staff member.
 - **GDPR-minded.** Consent timestamp stored with every booking, secret manage links instead of customer accounts, self-hosted fonts (no requests to Google).
 - **Never trusts the client.** The server re-checks every slot before saving; with "any barber" it falls back to the next free person if someone else was faster.
@@ -23,7 +24,8 @@ Next.js · TypeScript · PostgreSQL · Prisma · Tailwind CSS · Vitest
 - [x] Slot calculation with time zone / DST handling + tests
 - [x] Booking flow for customers: service → barber (or anyone) → day → time → details
 - [x] Manage / cancel link for customers (no account needed)
-- [ ] Admin panel
+- [x] Admin panel: day schedule per staff member with stats, services, staff with weekly hours and time off
+- [x] Secure admin sign-in: scrypt password hashes, signed httpOnly session cookie, rate limiting, route protection in `proxy.ts` plus a check in every Server Action
 - [ ] English / German
 - [ ] Cookie banner and data deletion (GDPR)
 - [ ] Email confirmations
@@ -37,7 +39,7 @@ Requirements: Node.js 22+, PostgreSQL 14+.
 npm install
 cp .env.example .env      # then put your PostgreSQL password into DATABASE_URL
 npx prisma migrate deploy # creates tables and constraints
-npm run db:seed           # demo barbershop data
-npm run dev               # http://localhost:3000
+npm run db:seed           # demo barbershop data + admin account from ADMIN_EMAIL / ADMIN_PASSWORD
+npm run dev               # http://localhost:3000 (admin: /admin)
 npm test                  # unit tests
 ```
