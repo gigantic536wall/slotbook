@@ -17,10 +17,12 @@
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
     "date-fns": "^4.4.0",
+    "geist": "^1.9.2",
     "next": "16.4.6",
     "pg": "^8.23.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "server-only": "^0.0.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {
