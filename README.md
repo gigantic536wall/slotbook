@@ -2,7 +2,7 @@
 
 Online appointment booking for barbershops, salons, studios and clinics. Customers pick a service, a staff member and a free time slot; the owner manages services, schedules and bookings in an admin panel.
 
-> 🚧 Work in progress. Live demo coming soon.
+**[▶ Live demo](https://slotbook-omega.vercel.app)** · [Admin panel](https://slotbook-omega.vercel.app/admin) (demo login is shown on the sign-in page; data resets every night)
 
 ## Highlights
 
@@ -16,7 +16,7 @@ Online appointment booking for barbershops, salons, studios and clinics. Custome
 
 ## Tech stack
 
-Next.js · TypeScript · PostgreSQL · Prisma · Tailwind CSS · Vitest
+Next.js 16 · TypeScript · PostgreSQL (Neon) · Prisma · Tailwind CSS · Vitest · Vercel
 
 ## Roadmap
 
@@ -29,7 +29,7 @@ Next.js · TypeScript · PostgreSQL · Prisma · Tailwind CSS · Vitest
 - [x] English / German: `/en` and `/de` URLs, language picked from the browser, typed dictionaries (a missing translation fails the build)
 - [x] GDPR: customers delete their own data from the booking page, automatic anonymization after 12 months (`npm run gdpr:cleanup`), privacy policy and Impressum in both languages, no tracking, so no cookie banner is needed
 - [ ] Email confirmations
-- [ ] Live demo
+- [x] Live demo on Vercel + Neon PostgreSQL (Frankfurt), daily cron job for demo reset and GDPR cleanup
 
 ## Run locally
 
